@@ -17,7 +17,13 @@ const isObject = (value) => {
 // if you wanna be sure;
 const root = "__OBJECT_ROOT__"
 
-// getParentMap will return a
+// delimiter will be used to
+// mark nesting in the object;
+// make sure keys in the object
+// don't contain this symbol
+const delimiter = "."
+
+// getParentMap returns a
 // non-nested object,
 // where each value of the obj object,
 // will be mapped to corresponding key
@@ -98,6 +104,49 @@ const getParentMap = (obj) => {
 		}
 	}
 	return result
+}
+
+const replaceKeysWithPaths = (obj, string = "") => {
+	const res = {}
+	for (let key in obj) {
+		const val = obj[key]
+		const newKey = string + key
+		if (isObject(val)) {
+			res[newKey] = replaceKeysWithPaths(val, newKey + delimiter)
+		} else {
+			res[newKey] = val
+		}
+	}
+	return res
+}
+
+const replacePathsWithKeys = (obj) => {
+	const res = {}
+	for (let key in obj) {
+		const val = obj[key]
+		const lastIndexOfDelimiter = key.lastIndexOf(delimiter)
+		let newKey
+		if (lastIndexOfDelimiter === -1) {
+			newKey = key
+		} else {
+			newKey = key.substring(lastIndexOfDelimiter + 1)
+		}
+		if (isObject(obj)) {
+			res[newKey] = replacePathsWithKeys(val)
+		} else {
+			res[newKey] = val
+		}
+	}
+	return res
+}
+
+const getKeyFromPath = (path) => {
+	const lastIndexOfDelimiter = path.lastIndexOf(delimiter)
+	if (lastIndexOfDelimiter === -1) {
+		return path
+	} else {
+		return path.substring(lastIndexOfDelimiter + 1)
+	}
 }
 
 // hasChildren returns whether
@@ -731,3 +780,34 @@ const getTotalWidth = (obj) => {
 	}
 	return width
 }
+
+const getRectsForContents = (contents, headers) => {
+	const headersRects = getRects(headers)
+	const rects = {}
+	const totalWidth = getTotalWidth(headers)
+	const totalHeight = getTotalHeight(headers)
+	let y = totalHeight
+	for (let content of contents) {
+		const stack = [content]
+		while (stack?.length > 0) {
+			const obj = stack.pop()
+			const objKeys = Object.keys(obj)
+			for (let objKey of objKeys) {
+				const objVal = obj[objKey]
+				if (isObject(objVal)) {
+					stack.push(objVal)
+				}
+				else {
+					const x = headersRects[objKey].lu.x
+					const id = y * totalWidth + x
+					const name = objVal
+					rects[id] = {name, x, y}
+				}
+			}
+		}
+		y++
+	}
+	return rects
+}
+
+

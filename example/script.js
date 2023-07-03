@@ -1,5 +1,5 @@
-const headers = {
-	"a": {},
+/* const headers = {
+	"": {},
 	"b": {
 		"c": {},
 		"d": {}
@@ -19,9 +19,26 @@ const headers = {
 			"n": {}
 		}
 	}
+} */
+const headers = {
+	"ship": {},
+	"port": {},
+	"arrival": {
+		"date": {},
+		"time": {}
+	},
+	"departure": {
+		"date": {},
+		"time": {}
+	}
 }
 
-const contents = [
+const replaced = replaceKeysWithPaths(headers)
+/* console.log(replaced)
+const original = replacePathsWithKeys(replaced)
+console.log(original) */
+
+/* const contents = [
 	{
 		"a": 1,
 		"b": {
@@ -66,11 +83,41 @@ const contents = [
 			}
 		}
 	}
-]
-const obj = headers
+]*/
 
-const colWidth = 50;
-const rowHeight = 50;
+const contents = [
+	{
+		"ship": "ship-1",
+		"port": "port-1",
+		"arrival": {
+			"date": "01-01-01",
+			"time": "13:12"
+		},
+		"departure": {
+			"date": "02-02-02",
+			"time": "14:13"
+		}
+	},
+	{
+		"ship": "ship-1",
+		"port": "port-1",
+		"arrival": {
+			"date": "01-01-02",
+			"time": "13:12"
+		},
+		"departure": {
+			"date": "02-02-02",
+			"time": "14:13"
+		}
+	},
+
+
+]
+
+let obj = replaced
+
+const colWidth = 100;
+const rowHeight = 100;
 
 const rects = getRects(obj)
 const keys = [...Object.keys(rects)]
@@ -86,36 +133,24 @@ for (let key of keys) {
 	rectEl.setAttribute("class", "cell")
 	rectEl.setAttribute("style", `position: absolute; left: ${(rect.lu.x) * colWidth}px; top: ${(rect.lu.y) * rowHeight}px; width: ${(rect.rl.x - rect.lu.x) * colWidth}px; height: ${(rect.rl.y - rect.lu.y) * rowHeight}px; line-height: ${(rect.rl.y - rect.lu.y) * rowHeight}px;`)
 
-	rectEl.innerText = key
+	rectEl.innerText = getKeyFromPath(key)
 	table.appendChild(rectEl)
 }
 
-const headersWithNoChildren = getKeysWithNoChildren(obj)
-
-console.log(headersWithNoChildren)
-
-let y = getTotalHeight(obj)
+const replacedContents = []
 for (let content of contents) {
-	const stack = [content]
-	while (stack?.length > 0) {
-		const obj = stack.pop()
-		const objKeys = Object.keys(obj)
-		for (let objKey of objKeys) {
-			const objVal = obj[objKey]
-			if (isObject(objVal)) {
-				stack.push(objVal)
-			}
-			else {
-				const contentCell = document.createElement("div")
-				const x = rects[objKey].lu.x
-				contentCell.setAttribute("class", "cell")
-				contentCell.setAttribute("style", `position: absolute; left: ${x * colWidth}px; top: ${y * rowHeight}px; width: ${colWidth}px; height: ${rowHeight}px; line-height: ${rowHeight}px;`)
-				contentCell.innerText = objVal
-				table.appendChild(contentCell)
-			}
-		}
-	}
-	y++
+	replacedContents.push(replaceKeysWithPaths(content))
+}
+
+const rectsForContents = getRectsForContents(replacedContents, replaced)
+
+for (let id in rectsForContents) {
+	const rect = rectsForContents[id]
+	const contentCell = document.createElement("div")
+	contentCell.setAttribute("class", "cell")
+	contentCell.setAttribute("style", `position: absolute; left: ${rect.x * colWidth}px; top: ${rect.y * rowHeight}px; width: ${colWidth}px; height: ${rowHeight}px; line-height: ${rowHeight}px;`)
+	contentCell.innerText = rect.name
+	table.appendChild(contentCell)
 }
 
 const body = document.querySelector("body")
